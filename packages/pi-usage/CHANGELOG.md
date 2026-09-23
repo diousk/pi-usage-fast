@@ -1,3 +1,12 @@
+# @diousk/pi-usage-fast
+
+## 0.1.0
+
+- Initial fork release with Fast mode support for `gpt-6-*` models on the official Codex endpoint.
+- Retains upstream pi-usage functionality and settings compatibility.
+
+## Upstream history
+
 # @narumitw/pi-usage
 
 ## 0.60.11

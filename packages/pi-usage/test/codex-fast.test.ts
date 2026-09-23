@@ -3,6 +3,7 @@ import { test } from "vitest";
 import {
   CODEX_FAST_MODEL_IDS,
   codexFastAvailability,
+  codexFastIsEffective,
   codexFastRequestTier,
   codexFastStatusLabel,
   correctCodexFastMessageCost,
@@ -143,4 +144,32 @@ test("cost correction and status labels stay scoped to effective Fast", () => {
   assert.equal(codexFastStatusLabel("codex credits available", false), "codex credits available");
   assert.equal(codexFastStatusLabel("openrouter $10 left", true), "openrouter $10 left");
   assert.equal(codexFastStatusLabel("codexical provider", true), "codexical provider");
+});
+
+for (const id of ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-6-future"]) {
+  test(`${id} supports Fast routing and status only on the official Codex endpoint`, () => {
+    const current = model(id) as never;
+    assert.deepEqual(codexFastAvailability(current, true), { kind: "available", enabled: true });
+    assert.equal(codexFastRequestTier(current, true), "priority");
+    assert.equal(codexFastRequestTier(current, false), "default");
+    assert.equal(codexFastStatusLabel("codex 80%", codexFastIsEffective(current, true)), "codex fast 80%");
+    const payload = { model: id, instructions: "Keep this prompt", input: [{ role: "user", content: "Hello" }] };
+    assert.deepEqual(rewriteCodexFastPayload(payload, current, true), { ...payload, service_tier: "priority" });
+    for (const overrides of [
+      { provider: "openai" },
+      { api: "openai-responses" },
+      { baseUrl: "https://proxy.example.test" },
+    ]) {
+      const foreign = model(id, overrides) as never;
+      assert.equal(codexFastIsEffective(foreign, true), false);
+      assert.equal(rewriteCodexFastPayload(payload, foreign, true), undefined);
+    }
+  });
+}
+
+test("GPT-6 family matching requires the exact prefix and a nonempty suffix", () => {
+  for (const id of ["gpt-6", "gpt-6-", "gpt-60-sol", "gpt-6.1-sol", "other-gpt-6-sol"]) {
+    assert.equal(codexFastAvailability(model(id) as never, true).kind, "unavailable");
+    assert.equal(codexFastRequestTier(model(id) as never, true), "default");
+  }
 });

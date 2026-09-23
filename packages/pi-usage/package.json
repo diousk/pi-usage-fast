@@ -1,7 +1,7 @@
 {
-  "name": "@narumitw/pi-usage",
-  "version": "0.60.11",
-  "description": "Pi extension that shows current-account usage and DeepSeek API balance for supported providers.",
+  "name": "@diousk/pi-usage-fast",
+  "version": "0.1.0",
+  "description": "Pi provider usage and API balance extension with Codex Fast mode support for gpt-6-* models.",
   "type": "module",
   "license": "MIT",
   "private": false,
@@ -66,10 +66,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/narumiruna/pi-extensions",
+    "url": "https://github.com/diousk/pi-usage-fast",
     "directory": "packages/pi-usage"
   },
   "dependencies": {
     "@narumitw/pi-tui-kit": "^0.61.0"
+  },
+  "homepage": "https://github.com/diousk/pi-usage-fast/tree/main/packages/pi-usage#readme",
+  "bugs": {
+    "url": "https://github.com/diousk/pi-usage-fast/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

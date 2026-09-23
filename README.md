@@ -1,3 +1,8 @@
+# pi-usage-fast
+
+This repository publishes [`@diousk/pi-usage-fast`](./packages/pi-usage), a fork of pi-usage with Fast mode support for `gpt-6-*` models.
+The upstream monorepo layout and history are retained; see the [package README](./packages/pi-usage/README.md) for installation and usage.
+
 # 🧩 Pi Extensions for the Pi Coding Agent
 
 [![npm scope](https://img.shields.io/badge/npm-@narumitw-blue)](https://www.npmjs.com/org/narumitw) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)

@@ -11,6 +11,10 @@ export const CODEX_FAST_MODEL_IDS: ReadonlySet<string> = new Set([
   "gpt-5.6-terra",
 ]);
 
+function supportsCodexFast(modelId: string): boolean {
+  return CODEX_FAST_MODEL_IDS.has(modelId) || /^gpt-6-.+/u.test(modelId);
+}
+
 export type CodexFastAvailability =
   | { kind: "available"; enabled: boolean }
   | { kind: "not-codex" }
@@ -24,7 +28,7 @@ export function codexFastAvailability(model: PiModel | undefined, enabled: boole
       reason: "Fast mode requires the official OpenAI Codex Responses endpoint.",
     };
   }
-  if (!CODEX_FAST_MODEL_IDS.has(model.id)) {
+  if (!supportsCodexFast(model.id)) {
     return {
       kind: "unavailable",
       reason: `${model.id} does not advertise Codex Fast support.`,
@@ -42,7 +46,7 @@ export function codexFastRequestTier(
   enabled: boolean,
 ): typeof CODEX_FAST_SERVICE_TIER | typeof CODEX_STANDARD_SERVICE_TIER | undefined {
   if (!isOfficialCodexModel(model)) return undefined;
-  return enabled && CODEX_FAST_MODEL_IDS.has(model.id) ? CODEX_FAST_SERVICE_TIER : CODEX_STANDARD_SERVICE_TIER;
+  return enabled && supportsCodexFast(model.id) ? CODEX_FAST_SERVICE_TIER : CODEX_STANDARD_SERVICE_TIER;
 }
 
 export function rewriteCodexFastPayload(

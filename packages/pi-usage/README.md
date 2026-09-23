@@ -1,10 +1,14 @@
-# 📊 pi-usage — Check Provider Usage, API Balance, and Codex Fast Mode
+# 📊 pi-usage-fast — Check Provider Usage, API Balance, and Codex Fast Mode
 
-[![npm](https://img.shields.io/npm/v/@narumitw/pi-usage)](https://www.npmjs.com/package/@narumitw/pi-usage) [![Pi extension](https://img.shields.io/badge/Pi-extension-blue)](https://pi.dev) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+[![npm](https://img.shields.io/npm/v/@diousk/pi-usage-fast)](https://www.npmjs.com/package/@diousk/pi-usage-fast) [![Pi extension](https://img.shields.io/badge/Pi-extension-blue)](https://pi.dev) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
 Inspect usage and DeepSeek API balance for Pi's active provider account, query other configured providers, and toggle Fast mode for supported OpenAI Codex models.
 The extension keeps each provider's native quota, allowance, and spending semantics instead of treating unlike values as equivalent.
 xAI OAuth subscription reporting follows the reviewed Grok Build contract and runs only after an explicit `/usage` action.
+
+This fork of [pi-usage](https://github.com/narumiruna/pi-extensions/tree/main/packages/pi-usage) adds Fast mode support for `gpt-6-*` models.
+Install it instead of the upstream pi-usage package to avoid duplicate commands and status updates.
+Existing `pi-usage.json` settings remain compatible.
 
 ## ✨ Features
 
@@ -25,19 +29,19 @@ Like every Pi extension, this package runs with Pi's process permissions.
 Review [Security and privacy](#-security-and-privacy) before installation.
 
 ```bash
-pi install npm:@narumitw/pi-usage
+pi install npm:@diousk/pi-usage-fast
 ```
 
 Try without installing permanently:
 
 ```bash
-pi -e npm:@narumitw/pi-usage
+pi -e npm:@diousk/pi-usage-fast
 ```
 
 Build and try this package locally from the repository root:
 
 ```bash
-npm --workspace @narumitw/pi-usage run build
+npm --workspace @diousk/pi-usage-fast run build
 pi -e ./packages/pi-usage
 ```
 
@@ -87,7 +91,7 @@ Run `/fast` without arguments to toggle Fast for the active supported Codex mode
 Fast is about 1.5× faster and uses more of your plan allowance.
 The `codexFastMode` preference defaults to Off.
 
-Fast currently applies only to official `openai-codex-responses` requests for `gpt-5.5`, `gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna` at `https://chatgpt.com`.
+Fast currently applies only to official `openai-codex-responses` requests for `gpt-5.5`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, and `gpt-6-*` models at `https://chatgpt.com`.
 It sends `service_tier: "priority"` while enabled and explicit `service_tier: "default"` otherwise.
 The statusline adds `fast` only while the preference is effective, for example `codex fast 59% ↻ 2h30m` with the default reset countdown.
 Unsupported models and custom or proxy origins are left unchanged.
@@ -180,7 +184,7 @@ To migrate one installation:
 
 ```bash
 pi remove npm:@narumitw/pi-codex-usage
-pi install npm:@narumitw/pi-usage
+pi install npm:@diousk/pi-usage-fast
 ```
 
 Remove the deprecated package rather than loading both usage extensions together.
