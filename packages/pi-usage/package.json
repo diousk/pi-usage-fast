@@ -1,6 +1,6 @@
 {
   "name": "@diousk/pi-usage-fast",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Pi provider usage and API balance extension with Codex Fast mode support for gpt-6-* models.",
   "type": "module",
   "license": "MIT",

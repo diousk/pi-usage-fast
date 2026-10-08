@@ -1,5 +1,16 @@
 # @diousk/pi-usage-fast
 
+## 0.2.0
+
+### Minor Changes
+
+- d6aea79: Add a Codex statusline preference for showing used quota percentages while keeping remaining quota as the default.
+
+### Patch Changes
+
+- 8922669: Enable Fast mode for gpt-6-* models on the official OpenAI Codex Responses endpoint.
+- ac5ceba: Support GPT-6 minor-version models such as gpt-6.1-sol in Codex Fast mode, including the toggle, priority routing, statusline label, and cost correction.
+
 ## 0.1.0
 
 - Initial fork release with Fast mode support for `gpt-6-*` models on the official Codex endpoint.
