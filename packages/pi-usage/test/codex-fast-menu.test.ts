@@ -81,33 +81,36 @@ function response(): Promise<Response> {
   );
 }
 
-test("/usage shows Fast state and toggles the same persistent preference", async (t) => {
-  const originalFetch = globalThis.fetch;
-  t.onTestFinished(() => {
-    globalThis.fetch = originalFetch;
+for (const id of ["gpt-5.6-sol", "gpt-6.1-sol"]) {
+  test(`/usage toggles the persistent Fast preference for ${id}`, async (t) => {
+    const originalFetch = globalThis.fetch;
+    t.onTestFinished(() => {
+      globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = response;
+    const memory = runtime();
+    const mock = createMockPi();
+    usageExtension(mock.pi, { settingsRuntime: memory.settingsRuntime });
+    const choices = ["Turn Fast mode on", "Close"];
+    const titles: string[] = [];
+    const model = { ...codexModel, id };
+    const { ctx, notifications } = createMockContext({
+      hasUI: true,
+      mode: "rpc",
+      model,
+      select: async (title: string) => {
+        titles.push(title);
+        return choices.shift();
+      },
+      modelRegistry: { ...registry(), getAvailable: () => [model], getAll: () => [model] },
+    });
+    await mock.commands.get("usage")?.handler("", ctx);
+    assert.deepEqual(memory.patches, [{ codexFastMode: true }]);
+    assert.match(titles[0] ?? "", /Fast mode: Off/);
+    assert.match(titles[0] ?? "", /1\.5× faster.*uses more/);
+    assert.match(notifications[0]?.message ?? "", /Fast mode enabled/);
   });
-  globalThis.fetch = response;
-  const memory = runtime();
-  const mock = createMockPi();
-  usageExtension(mock.pi, { settingsRuntime: memory.settingsRuntime });
-  const choices = ["Turn Fast mode on", "Close"];
-  const titles: string[] = [];
-  const { ctx, notifications } = createMockContext({
-    hasUI: true,
-    mode: "rpc",
-    model: codexModel,
-    select: async (title: string) => {
-      titles.push(title);
-      return choices.shift();
-    },
-    modelRegistry: registry(),
-  });
-  await mock.commands.get("usage")?.handler("", ctx);
-  assert.deepEqual(memory.patches, [{ codexFastMode: true }]);
-  assert.match(titles[0] ?? "", /Fast mode: Off/);
-  assert.match(titles[0] ?? "", /1\.5× faster.*uses more/);
-  assert.match(notifications[0]?.message ?? "", /Fast mode enabled/);
-});
+}
 
 test("/usage cancellation does not change Fast and unsupported models show no toggle", async (t) => {
   const originalFetch = globalThis.fetch;

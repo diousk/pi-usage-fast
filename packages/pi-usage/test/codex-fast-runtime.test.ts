@@ -182,6 +182,41 @@ test("provider payload captures the toggle state when its hook begins", async ()
   assert.deepEqual(after, { model: "gpt-5.6-sol", service_tier: "priority" });
 });
 
+test("/fast toggles GPT-6.1 routing, status and cost correction", async () => {
+  const memory = memoryRuntime();
+  const mock = createMockPi();
+  const fast = registerCodexFastMode(mock.pi, memory.runtime, () => undefined);
+  const model = { ...codexModel, id: "gpt-6.1-sol" };
+  const current = context({ model });
+  const command = mock.commands.get("fast");
+  const hook = mock.events.get("before_provider_request")?.[0];
+  const messageEnd = mock.events.get("message_end")?.[0];
+  assert.ok(command);
+  assert.ok(hook);
+  assert.ok(messageEnd);
+  await command.handler("", current.ctx);
+  assert.deepEqual(memory.patches, [{ codexFastMode: true }]);
+  assert.equal(fast.decorateStatus(model as never, "codex 80%"), "codex fast 80%");
+  const payload = { model: model.id, instructions: "Keep this prompt", input: [{ role: "user", content: "Hello" }] };
+  assert.deepEqual(await hook({ payload }, current.ctx), { ...payload, service_tier: "priority" });
+  const usage = {
+    input: 100,
+    output: 20,
+    cacheRead: 10,
+    cacheWrite: 0,
+    totalTokens: 130,
+    cost: { input: 0.00025, output: 0.0003, cacheRead: 0.0000025, cacheWrite: 0, total: 0.0005525 },
+  };
+  const corrected = (await messageEnd(
+    { message: { role: "assistant", provider: model.provider, model: model.id, usage } },
+    current.ctx,
+  )) as { message?: { usage: typeof usage } };
+  assert.equal(corrected.message?.usage.cost.total, usage.cost.total * 2);
+  await command.handler("", current.ctx);
+  assert.equal(fast.decorateStatus(model as never, "codex 80%"), "codex 80%");
+  assert.deepEqual(await hook({ payload }, current.ctx), { ...payload, service_tier: "default" });
+});
+
 test("cost correction follows the captured request tier across a later toggle", async () => {
   const memory = memoryRuntime();
   const mock = createMockPi();

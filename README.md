@@ -1,6 +1,6 @@
 # pi-usage-fast
 
-This repository publishes [`@diousk/pi-usage-fast`](./packages/pi-usage), a fork of pi-usage with Fast mode support for `gpt-6-*` models.
+This repository publishes [`@diousk/pi-usage-fast`](./packages/pi-usage), a fork of pi-usage with Fast mode support for GPT-6 and GPT-6.x models, including `gpt-6.1-sol`.
 The upstream monorepo layout and history are retained; see the [package README](./packages/pi-usage/README.md) for installation and usage.
 
 # 🧩 Pi Extensions for the Pi Coding Agent

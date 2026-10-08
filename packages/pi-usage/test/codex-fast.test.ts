@@ -146,7 +146,16 @@ test("cost correction and status labels stay scoped to effective Fast", () => {
   assert.equal(codexFastStatusLabel("codexical provider", true), "codexical provider");
 });
 
-for (const id of ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-6-future"]) {
+for (const id of [
+  "gpt-6-astra",
+  "gpt-6-sol",
+  "gpt-6-luna",
+  "gpt-6-future",
+  "gpt-6.1-astra",
+  "gpt-6.1-sol",
+  "gpt-6.1-luna",
+  "gpt-6.2-future",
+]) {
   test(`${id} supports Fast routing and status only on the official Codex endpoint`, () => {
     const current = model(id) as never;
     assert.deepEqual(codexFastAvailability(current, true), { kind: "available", enabled: true });
@@ -155,6 +164,12 @@ for (const id of ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-6-future"]) {
     assert.equal(codexFastStatusLabel("codex 80%", codexFastIsEffective(current, true)), "codex fast 80%");
     const payload = { model: id, instructions: "Keep this prompt", input: [{ role: "user", content: "Hello" }] };
     assert.deepEqual(rewriteCodexFastPayload(payload, current, true), { ...payload, service_tier: "priority" });
+    const corrected = correctCodexFastMessageCost(
+      { role: "assistant", provider: "openai-codex", model: id, usage },
+      current,
+      true,
+    ) as { usage: typeof usage };
+    assert.equal(corrected.usage.cost.total, usage.cost.total * 2);
     for (const overrides of [
       { provider: "openai" },
       { api: "openai-responses" },
@@ -167,8 +182,19 @@ for (const id of ["gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-6-future"]) {
   });
 }
 
-test("GPT-6 family matching requires the exact prefix and a nonempty suffix", () => {
-  for (const id of ["gpt-6", "gpt-6-", "gpt-60-sol", "gpt-6.1-sol", "other-gpt-6-sol"]) {
+test("GPT-6 family matching requires a valid minor version and a nonempty suffix", () => {
+  for (const id of [
+    "gpt-6",
+    "gpt-6-",
+    "gpt-60-sol",
+    "gpt-6.1",
+    "gpt-6.1-",
+    "gpt-6.-sol",
+    "gpt-6.x-sol",
+    "gpt-6.1.2-sol",
+    "other-gpt-6-sol",
+    "other-gpt-6.1-sol",
+  ]) {
     assert.equal(codexFastAvailability(model(id) as never, true).kind, "unavailable");
     assert.equal(codexFastRequestTier(model(id) as never, true), "default");
   }

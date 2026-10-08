@@ -12,7 +12,7 @@ export const CODEX_FAST_MODEL_IDS: ReadonlySet<string> = new Set([
 ]);
 
 function supportsCodexFast(modelId: string): boolean {
-  return CODEX_FAST_MODEL_IDS.has(modelId) || /^gpt-6-.+/u.test(modelId);
+  return CODEX_FAST_MODEL_IDS.has(modelId) || /^gpt-6(?:\.\d+)?-.+/u.test(modelId);
 }
 
 export type CodexFastAvailability =

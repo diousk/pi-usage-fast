@@ -6,7 +6,7 @@ Inspect usage and DeepSeek API balance for Pi's active provider account, query o
 The extension keeps each provider's native quota, allowance, and spending semantics instead of treating unlike values as equivalent.
 xAI OAuth subscription reporting follows the reviewed Grok Build contract and runs only after an explicit `/usage` action.
 
-This fork of [pi-usage](https://github.com/narumiruna/pi-extensions/tree/main/packages/pi-usage) adds Fast mode support for `gpt-6-*` models.
+This fork of [pi-usage](https://github.com/narumiruna/pi-extensions/tree/main/packages/pi-usage) adds Fast mode support for `gpt-6-*` and `gpt-6.<minor>-*` models, including `gpt-6.1-sol`.
 Install it instead of the upstream pi-usage package to avoid duplicate commands and status updates.
 Existing `pi-usage.json` settings remain compatible.
 
@@ -91,7 +91,8 @@ Run `/fast` without arguments to toggle Fast for the active supported Codex mode
 Fast is about 1.5× faster and uses more of your plan allowance.
 The `codexFastMode` preference defaults to Off.
 
-Fast currently applies only to official `openai-codex-responses` requests for `gpt-5.5`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, and `gpt-6-*` models at `https://chatgpt.com`.
+Fast currently applies only to official `openai-codex-responses` requests for `gpt-5.5`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-6-*`, and `gpt-6.<minor>-*` models at `https://chatgpt.com`.
+For example, `gpt-6.1-sol` supports the same toggle, routing, statusline, and priority cost correction as `gpt-6-sol`.
 It sends `service_tier: "priority"` while enabled and explicit `service_tier: "default"` otherwise.
 The statusline adds `fast` only while the preference is effective, for example `codex fast 59% ↻ 2h30m` with the default reset countdown.
 Unsupported models and custom or proxy origins are left unchanged.
