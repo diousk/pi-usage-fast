@@ -1,5 +1,11 @@
 # @narumitw/pi-lsp
 
+## 0.49.9
+
+### Patch Changes
+
+- 13ae3cb: Support current Pi session entries, custom-message startup events and nested tool contexts. Reject invalid fullscreen shortcut hints, and extend Fast routing to GPT-6.1 Sol and official OpenAI Responses requests. OpenAI usage now directs users to the correct ChatGPT or API usage settings without sending token-sharing credentials to legacy endpoints.
+
 ## 0.49.8
 
 ### Patch Changes
