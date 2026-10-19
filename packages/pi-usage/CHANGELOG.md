@@ -1,5 +1,11 @@
 # @diousk/pi-usage-fast
 
+## 0.3.0
+
+### Minor Changes
+
+- 13ae3cb: Support current Pi session entries, custom-message startup events and nested tool contexts. Reject invalid fullscreen shortcut hints, and extend Fast routing to GPT-6.1 Sol and official OpenAI Responses requests. OpenAI usage now directs users to the correct ChatGPT or API usage settings without sending token-sharing credentials to legacy endpoints.
+
 ## 0.2.0
 
 ### Minor Changes
