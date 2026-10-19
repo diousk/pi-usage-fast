@@ -46,7 +46,7 @@ jobs:
         id: changesets
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          github-token: ${{ secrets.PAT_TOKEN }}
+          github-token: ${{ github.token }}
           version-script: npm run version-packages
           publish-script: npm run publish-packages:sequential
           commit-message: "chore(release): version packages"
