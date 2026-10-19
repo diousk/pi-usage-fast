@@ -19,7 +19,13 @@ import {
   type TuiInputListenerResult,
   truncateToWidth,
 } from "@earendil-works/pi-tui";
-import { type BtwKeybindingOverrides, BtwPasteGuard, resolveBtwShortcuts, setBtwShortcuts } from "./keybindings.js";
+import {
+  type BtwKeybindingOverrides,
+  BtwPasteGuard,
+  normalizeBtwKey,
+  resolveBtwShortcuts,
+  setBtwShortcuts,
+} from "./keybindings.js";
 import type { BtwMainThreadUpdateSubscription } from "./main-thread-updates.js";
 import type { BtwLayout } from "./settings.js";
 import { formatKeyLabel, sanitizeSingleLine } from "./text.js";
@@ -308,6 +314,7 @@ function legacyRawInput(key: string): string | undefined {
 
 // Mirror matchesKey(), using parseKey() to canonicalize IDs that share legacy raw input.
 function keyInputIdentity(key: string): string {
+  if (!normalizeBtwKey(key)) return "";
   const identity = normalizedKeyId(key);
   const input = legacyRawInput(identity);
   return input ? normalizedKeyId(parseKey(input) ?? identity) : identity;

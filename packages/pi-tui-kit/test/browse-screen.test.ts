@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import { stripVTControlCharacters } from "node:util";
 import { initTheme } from "@earendil-works/pi-coding-agent";
 import { CURSOR_MARKER, type Focusable, visibleWidth } from "@earendil-works/pi-tui";
 import { test } from "vitest";
+import { stripPiTerminalControls as stripVTControlCharacters } from "../../../test/terminal-render.js";
 import { createMenuScreenComponent, type MenuScreenComponent, type MenuScreenEvent } from "../src/components/index.js";
 import type { BrowseDetailDocument, MenuBrowseItem, MenuScreen } from "../src/types.js";
 

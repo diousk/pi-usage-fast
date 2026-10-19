@@ -82,6 +82,19 @@ test("tree display strips terminal controls while copy keeps the raw selected te
   const root = userNode("root", null, rawText);
   root.label = "label\u001b[2J";
   root.children.push(
+    ...[null, { content: rawText }, { content: [{ type: "text" as const, text: rawText }] }].map(
+      (replacement, index): SessionTreeNode => ({
+        entry: {
+          type: "context_edit",
+          id: `edit-${index}`,
+          parentId: "root",
+          timestamp: "2026-01-01T00:00:01.000Z",
+          targetId: "root",
+          replacement,
+        },
+        children: [],
+      }),
+    ),
     {
       entry: {
         type: "message",

@@ -10,6 +10,20 @@ import {
   startGoalForTest,
 } from "./support/goal-fixture.js";
 
+test("custom-message startup does not consume a queued Goal prompt", async () => {
+  const active = await startGoalForTest();
+  const goal = requireLastGoal(active.mock);
+  const messages = active.mock.sentUserMessages.length;
+  assert.doesNotThrow(() =>
+    active.mock.events.get("before_agent_start")?.[0]?.(
+      { messageType: "custom", message: { content: "external follow-up" } },
+      active.ctx,
+    ),
+  );
+  assert.equal(requireLastGoal(active.mock).id, goal.id);
+  assert.equal(active.mock.sentUserMessages.length, messages);
+});
+
 test("agent_settled dispatches one idle continuation after agent_end records intent", async () => {
   const settled = await startGoalForTest();
 

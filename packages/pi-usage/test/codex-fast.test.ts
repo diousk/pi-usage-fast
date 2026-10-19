@@ -34,7 +34,13 @@ const usage = {
 };
 
 test("the supported model set matches the inspected Codex catalog", () => {
-  assert.deepEqual([...CODEX_FAST_MODEL_IDS].sort(), ["gpt-5.5", "gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra"]);
+  assert.deepEqual([...CODEX_FAST_MODEL_IDS].sort(), [
+    "gpt-5.5",
+    "gpt-5.6-luna",
+    "gpt-5.6-sol",
+    "gpt-5.6-terra",
+    "gpt-6.1-sol",
+  ]);
   for (const id of CODEX_FAST_MODEL_IDS) {
     assert.deepEqual(codexFastAvailability(model(id) as never, true), {
       kind: "available",
@@ -48,7 +54,7 @@ test("the supported model set matches the inspected Codex catalog", () => {
 
 test("eligibility requires the official Codex provider, API, and origin", () => {
   assert.equal(codexFastAvailability(model() as never, false).kind, "available");
-  assert.equal(codexFastAvailability(model("gpt-5.6-sol", { provider: "openai" }) as never, true).kind, "not-codex");
+  assert.equal(codexFastAvailability(model("gpt-5.6-sol", { provider: "openai" }) as never, true).kind, "unavailable");
   assert.equal(
     codexFastAvailability(model("gpt-5.6-sol", { api: "openai-responses" }) as never, true).kind,
     "unavailable",
@@ -189,13 +195,31 @@ test("GPT-6 family matching requires a valid minor version and a nonempty suffix
     "gpt-60-sol",
     "gpt-6.1",
     "gpt-6.1-",
+    "gpt-6.2",
     "gpt-6.-sol",
     "gpt-6.x-sol",
     "gpt-6.1.2-sol",
+    "gpt-6.2.",
+    "gpt-6.2-",
     "other-gpt-6-sol",
     "other-gpt-6.1-sol",
   ]) {
     assert.equal(codexFastAvailability(model(id) as never, true).kind, "unavailable");
     assert.equal(codexFastRequestTier(model(id) as never, true), "default");
   }
+});
+
+test.each(["openai-codex", "openai"])("GPT-6.1 Sol Fast routing uses only the official %s transport", (provider) => {
+  const current = model(
+    "gpt-6.1-sol",
+    provider === "openai" ? { provider, api: "openai-responses", baseUrl: "https://api.openai.com/v1" } : {},
+  );
+  const payload = { input: [{ role: "user", content: "unchanged" }] };
+  assert.deepEqual(codexFastAvailability(current as never, true), { kind: "available", enabled: true });
+  assert.deepEqual(rewriteCodexFastPayload(payload, current as never, true), { ...payload, service_tier: "priority" });
+  assert.deepEqual(payload, { input: [{ role: "user", content: "unchanged" }] });
+  assert.equal(
+    rewriteCodexFastPayload(payload, { ...current, baseUrl: "https://proxy.example" } as never, true),
+    undefined,
+  );
 });

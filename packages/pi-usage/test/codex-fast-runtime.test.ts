@@ -106,7 +106,7 @@ test("/fast toggles one persistent setting on and off with visible usage guidanc
   const first = context();
   await command.handler("", first.ctx);
   assert.equal(memory.state.settings.codexFastMode, true);
-  assert.match(first.notifications[0]?.message ?? "", /1\.5× faster.*uses more/);
+  assert.match(first.notifications[0]?.message ?? "", /priority routing.*more.*allowance or API credits/);
   const second = context();
   await command.handler("", second.ctx);
   assert.equal(memory.state.settings.codexFastMode, false);

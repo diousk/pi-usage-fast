@@ -9,6 +9,7 @@ export const CODEX_FAST_MODEL_IDS: ReadonlySet<string> = new Set([
   "gpt-5.6-luna",
   "gpt-5.6-sol",
   "gpt-5.6-terra",
+  "gpt-6.1-sol",
 ]);
 
 function supportsCodexFast(modelId: string): boolean {
@@ -21,11 +22,11 @@ export type CodexFastAvailability =
   | { kind: "unavailable"; reason: string };
 
 export function codexFastAvailability(model: PiModel | undefined, enabled: boolean): CodexFastAvailability {
-  if (model?.provider !== "openai-codex") return { kind: "not-codex" };
+  if (model?.provider !== "openai-codex" && model?.provider !== "openai") return { kind: "not-codex" };
   if (!isOfficialCodexModel(model)) {
     return {
       kind: "unavailable",
-      reason: "Fast mode requires the official OpenAI Codex Responses endpoint.",
+      reason: "Fast mode requires an official OpenAI Responses or Codex Responses endpoint.",
     };
   }
   if (!supportsCodexFast(model.id)) {
@@ -92,12 +93,18 @@ export function codexFastStatusLabel(status: string, enabled: boolean): string {
   return status === "codex" ? "codex fast" : `codex fast${status.slice("codex".length)}`;
 }
 
-function isOfficialCodexModel(model: PiModel | undefined): model is PiModel & { api: "openai-codex-responses" } {
-  if (model?.provider !== "openai-codex" || !hasApi(model, "openai-codex-responses")) {
-    return false;
-  }
+function isOfficialCodexModel(
+  model: PiModel | undefined,
+): model is PiModel & { api: "openai-codex-responses" | "openai-responses" } {
+  if (!model) return false;
   try {
-    return new URL(model.baseUrl).origin === "https://chatgpt.com";
+    const origin = new URL(model.baseUrl).origin;
+    return (
+      (model.provider === "openai-codex" &&
+        hasApi(model, "openai-codex-responses") &&
+        origin === "https://chatgpt.com") ||
+      (model.provider === "openai" && hasApi(model, "openai-responses") && origin === "https://api.openai.com")
+    );
   } catch {
     return false;
   }

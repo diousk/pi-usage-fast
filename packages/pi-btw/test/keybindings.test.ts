@@ -75,11 +75,14 @@ test.each([
   ["alt+n", "alt+down"],
   ["ctrl+alt+h", "alt+backspace"],
   ["ctrl+alt+m", "alt+enter"],
-  ["ctrl+x", "unknown+ctrl+x"],
 ])("detects live legacy matcher overlap: %s / %s", (first, second) => {
   setKittyProtocolActive(false);
   vi.stubEnv("WT_SESSION", "");
   assert.equal(btwKeysOverlap(first, second), true);
+});
+
+test("invalid Pi modifier strings cannot collide with a usable shortcut", () => {
+  assert.equal(btwKeysOverlap("ctrl+x", "unknown+ctrl+x"), false);
 });
 
 test("mode-dependent and Windows Terminal collisions follow Pi rather than string identity", () => {
