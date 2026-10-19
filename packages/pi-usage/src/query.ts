@@ -1,5 +1,5 @@
-// This module intentionally keeps adapter transport beside resolved-auth and origin validation;
-// separating that security boundary would duplicate request and redaction policy across providers.
+// Adapter selection, resolved auth and origin validation share this provider security boundary.
+// Bounded HTTP transport lives separately and receives only validated request auth.
 import { randomBytes } from "node:crypto";
 import { type ExtensionContext, readStoredCredential } from "@earendil-works/pi-coding-agent";
 import { errorMessage, fingerprintResolvedAuth, redactUsageError } from "./core.js";
@@ -41,7 +41,10 @@ import type {
   ZaiQuotaPayload,
   ZaiSubscriptionPayload,
 } from "./types.js";
+import { fetchProviderJson } from "./usage-http.js";
 import { resolveUsageTarget } from "./usage-targets.js";
+
+export { fetchProviderJson } from "./usage-http.js";
 
 const BASETEN_BILLING_USAGE_URL = "https://api.baseten.co/v1/billing/usage_summary";
 const BASETEN_USAGE_WINDOW_DAYS = 30;
@@ -68,12 +71,36 @@ const XAI_CLIENT_HEADERS = Object.freeze({
   "x-grok-client-version": "1.0.10",
   "x-grok-client-mode": "interactive",
 });
-const MAX_SUCCESS_BODY_BYTES = 64 * 1024;
-const MAX_ERROR_BODY_BYTES = 4 * 1024;
 
 export const AUTH_FINGERPRINT_SALT = randomBytes(32);
 
 export const SUPPORTED_ADAPTERS: readonly UsageProviderAdapter[] = [
+  {
+    id: "openai",
+    displayName: "OpenAI",
+    semantics: { kind: "consumer-subscription", label: "ChatGPT plan usage" },
+    publishesStatusline: false,
+    async query(auth) {
+      const subscription = auth.chatgptPlan === true;
+      return {
+        providerId: "openai",
+        providerName: subscription ? "OpenAI (ChatGPT)" : "OpenAI API",
+        capturedAt: Date.now(),
+        source: "openai-usage-settings",
+        semantics: subscription
+          ? { kind: "consumer-subscription", label: "ChatGPT plan usage" }
+          : { kind: "api-key", label: "OpenAI API usage" },
+        buckets: [],
+        metrics: [],
+        notes: [
+          subscription
+            ? "Review plan usage and app limits in ChatGPT Settings → Usage: https://chatgpt.com/settings/usage"
+            : "Review OpenAI API usage and billing: https://platform.openai.com/usage",
+          "Numeric usage is unavailable through this authentication flow; no quota is inferred.",
+        ],
+      };
+    },
+  },
   {
     id: "baseten",
     displayName: "Baseten",
@@ -344,7 +371,7 @@ export async function resolveUsageAuth(
   const model = candidateModels(ctx, adapter.id).find((candidate) => hasOfficialOrigin(candidate, adapter.id));
   if (!model) return undefined;
   if (
-    ["github-copilot", "xai"].includes(adapter.id) &&
+    ["github-copilot", "xai", "openai"].includes(adapter.id) &&
     candidateReader?.waitUntilReady &&
     !(await candidateReader.waitUntilReady(ctx, adapter.id))
   ) {
@@ -463,12 +490,32 @@ export async function resolveUsageAuth(
   const secrets = [auth.apiKey, headerValue(auth.headers, "Authorization"), authorization].filter(
     (value): value is string => Boolean(value),
   );
+  let chatgptPlan: boolean | undefined;
+  if (adapter.id === "openai") {
+    const offered = candidateReader
+      ? await candidateReader(ctx, adapter.id)
+      : fallbackOAuthCredentialCandidates(adapter.id, credentialReader);
+    if (!offered.ok) throw new Error("OpenAI OAuth credential discovery failed closed.");
+    const access = bearerToken(authorization);
+    chatgptPlan = offered.candidates.some(
+      (credential) =>
+        credential.access === access &&
+        Array.isArray(credential.scopes) &&
+        credential.scopes.includes("chatgpt.tokens.use.direct"),
+    );
+    if (!chatgptPlan && providerResult?.source === "OAuth") {
+      throw new Error(
+        "The active OpenAI OAuth credential does not match an available ChatGPT plan credential; reload after account activation.",
+      );
+    }
+  }
   return finalize({
     apiKey: auth.apiKey,
     headers,
     fingerprint: "",
     secrets,
     model,
+    ...(chatgptPlan !== undefined ? { chatgptPlan } : {}),
   });
 }
 
@@ -574,130 +621,6 @@ function candidateModels(ctx: ExtensionContext, providerId: string): PiModel[] {
   for (const model of ctx.modelRegistry.getAvailable()) add(model);
   for (const model of ctx.modelRegistry.getAll()) add(model);
   return candidates;
-}
-
-export async function fetchProviderJson(
-  url: string,
-  auth: ResolvedUsageAuth,
-  signal: AbortSignal,
-  timeoutMs: number,
-  description: string,
-  request: {
-    method?: "GET" | "POST";
-    body?: Record<string, unknown>;
-    redirect?: RequestRedirect;
-    userAgent?: boolean;
-    responseError?: (status: number, text: string) => string | undefined;
-  } = {},
-): Promise<Record<string, unknown>> {
-  const controller = new AbortController();
-  let timedOut = false;
-  const abortFromCaller = () => controller.abort();
-  if (signal.aborted) controller.abort();
-  else signal.addEventListener("abort", abortFromCaller, { once: true });
-  const timeout = setTimeout(() => {
-    timedOut = true;
-    controller.abort();
-  }, timeoutMs);
-  try {
-    const headers = { ...auth.headers };
-    if (request.userAgent !== false && !hasHeader(headers, "User-Agent")) {
-      headers["User-Agent"] = "pi-usage";
-    }
-    if (request.body && !hasHeader(headers, "Content-Type")) {
-      headers["Content-Type"] = "application/json";
-    }
-    const response = await fetch(url, {
-      method: request.method ?? "GET",
-      headers,
-      ...(request.body ? { body: JSON.stringify(request.body) } : {}),
-      ...(request.redirect ? { redirect: request.redirect } : {}),
-      signal: controller.signal,
-    });
-    if (response.redirected) throw new Error(`${description} refused a redirected response.`);
-    if (controller.signal.aborted) throw Object.assign(new Error("Usage query aborted."), { name: "AbortError" });
-    const text = await readBoundedResponse(
-      response,
-      response.ok ? MAX_SUCCESS_BODY_BYTES : MAX_ERROR_BODY_BYTES,
-      !response.ok,
-      description,
-      controller.signal,
-    );
-    if (controller.signal.aborted) throw Object.assign(new Error("Usage query aborted."), { name: "AbortError" });
-    const responseError = request.responseError?.(response.status, text);
-    if (responseError) throw new Error(responseError);
-    if (!response.ok) {
-      throw new Error(
-        `${description} returned ${response.status} ${response.statusText}: ${redactUsageError(text, auth.secrets)}`,
-      );
-    }
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(text) as unknown;
-    } catch (error) {
-      throw new Error(`${description} returned invalid JSON: ${errorMessage(error)}`);
-    }
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      throw new Error(`${description} response was not an object.`);
-    }
-    return parsed as Record<string, unknown>;
-  } catch (error) {
-    if (timedOut) {
-      throw new Error(`Timed out after ${Math.round(timeoutMs / 1000)}s while fetching usage.`);
-    }
-    if (signal.aborted) throw Object.assign(new Error("Usage query aborted."), { name: "AbortError" });
-    throw error;
-  } finally {
-    clearTimeout(timeout);
-    signal.removeEventListener("abort", abortFromCaller);
-  }
-}
-
-async function readBoundedResponse(
-  response: Response,
-  maxBytes: number,
-  truncateOverflow: boolean,
-  description: string,
-  signal: AbortSignal,
-): Promise<string> {
-  if (!response.body) return "";
-  const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  let truncated = false;
-  const abort = () => void reader.cancel().catch(() => undefined);
-  if (signal.aborted) abort();
-  else signal.addEventListener("abort", abort, { once: true });
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const remaining = maxBytes - total;
-      if (value.byteLength > remaining) {
-        if (remaining > 0) chunks.push(value.subarray(0, remaining));
-        total = maxBytes;
-        truncated = true;
-        await reader.cancel();
-        break;
-      }
-      chunks.push(value);
-      total += value.byteLength;
-    }
-  } finally {
-    signal.removeEventListener("abort", abort);
-    reader.releaseLock();
-  }
-  if (truncated && !truncateOverflow) {
-    throw new Error(`${description} response exceeded ${maxBytes} bytes.`);
-  }
-  const body = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    body.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  const text = new TextDecoder().decode(body);
-  return truncated ? `${text}…` : text;
 }
 
 type RequestAuth = {
@@ -898,6 +821,7 @@ function hasOfficialUrlOrigin(value: string, providerId: string): boolean {
       return ["https://inference.baseten.co", "https://api.baseten.co"].includes(url.origin);
     }
     if (providerId === "openai-codex") return url.origin === "https://chatgpt.com";
+    if (providerId === "openai") return url.origin === "https://api.openai.com";
     if (providerId === "deepseek") return url.origin === "https://api.deepseek.com";
     if (providerId === "fireworks") return url.origin === "https://api.fireworks.ai";
     if (providerId === "openrouter") return url.origin === "https://openrouter.ai";
@@ -923,10 +847,6 @@ function hasOfficialUrlOrigin(value: string, providerId: string): boolean {
 function headerValue(headers: Record<string, string | null> | undefined, name: string): string | undefined {
   const entry = Object.entries(headers ?? {}).find(([candidate]) => candidate.toLowerCase() === name.toLowerCase());
   return entry?.[1] ?? undefined;
-}
-
-function hasHeader(headers: Record<string, string>, name: string): boolean {
-  return Object.keys(headers).some((key) => key.toLowerCase() === name.toLowerCase());
 }
 
 function validatedXaiUserId(value: unknown): string {

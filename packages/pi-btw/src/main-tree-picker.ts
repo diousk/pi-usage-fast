@@ -231,6 +231,17 @@ function sanitizeEntryForDisplay(entry: SessionEntry): SessionEntry {
         customType: sanitizeSingleLine(entry.customType),
         content: sanitizeDisplayContent(entry.content) as typeof entry.content,
       };
+    case "context_edit":
+      return {
+        ...entry,
+        replacement:
+          entry.replacement === null
+            ? null
+            : {
+                ...entry.replacement,
+                content: sanitizeDisplayContent(entry.replacement.content) as typeof entry.replacement.content,
+              },
+      };
     case "compaction":
       return { ...entry, summary: sanitizeSingleLine(entry.summary) };
     case "branch_summary":

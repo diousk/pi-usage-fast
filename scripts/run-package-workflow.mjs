@@ -65,7 +65,7 @@ function makePublic(packageName) {
 
 function pack(name) {
   requireUnscopedName(name);
-  run(npmCommand, ["--workspace", `@narumitw/pi-${name}`, "pack", "--dry-run"]);
+  run(npmCommand, ["--workspace", `./packages/pi-${name}`, "pack", "--dry-run"]);
 }
 
 function install(name) {

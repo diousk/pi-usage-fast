@@ -107,7 +107,7 @@ for (const id of ["gpt-5.6-sol", "gpt-6.1-sol"]) {
     await mock.commands.get("usage")?.handler("", ctx);
     assert.deepEqual(memory.patches, [{ codexFastMode: true }]);
     assert.match(titles[0] ?? "", /Fast mode: Off/);
-    assert.match(titles[0] ?? "", /1\.5× faster.*uses more/);
+    assert.match(titles[0] ?? "", /priority routing.*more.*allowance or API credits/);
     assert.match(notifications[0]?.message ?? "", /Fast mode enabled/);
   });
 }

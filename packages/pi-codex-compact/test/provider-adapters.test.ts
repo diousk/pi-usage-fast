@@ -21,9 +21,9 @@ const PROVIDER_MODULES = {
     credentialHeader: "authorization",
   },
   "azure-openai-responses": {
-    specifier: "@earendil-works/pi-ai/providers/azure-openai-responses",
-    factory: "azureOpenAIResponsesProvider",
-    provider: "azure-openai-responses",
+    specifier: "@earendil-works/pi-ai/providers/azure",
+    factory: "azureProvider",
+    provider: "azure",
     baseUrl: "https://example.openai.azure.com/openai/v1",
     expectedUrl: "https://example.openai.azure.com/openai/v1/responses?api-version=v1",
     bodyKind: "string",

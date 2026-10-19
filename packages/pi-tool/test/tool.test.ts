@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
-import { stripVTControlCharacters } from "node:util";
 import { initTheme } from "@earendil-works/pi-coding-agent";
 import { createRpcHarness, createTuiHarness } from "@narumitw/pi-tui-kit/testing";
 import { test } from "vitest";
 import { createMockContext, createMockPi } from "../../../test/support.js";
+import {
+  stripPiCursorMarkers,
+  stripPiTerminalControls as stripVTControlCharacters,
+} from "../../../test/terminal-render.js";
 import toolExtension from "../src/index.js";
 import { createToolCatalog } from "../src/tool-catalog.js";
 
@@ -457,13 +460,13 @@ test("terminal controls are stripped by the browse display boundary", async () =
   const running = command.handler("", { ...base, ui: { ...base.ui, custom: tui.custom } });
   await tui.waitForOpen();
   await openToolCatalog(tui);
-  let frame = tui.render().join("\n");
+  let frame = stripPiCursorMarkers(tui.render().join("\n"));
   assert.equal(frame.includes("\u001b]0;owned"), false);
   assert.equal(frame.includes("\u0007"), false);
   tui.press("tui.select.confirm");
   const narrowFrame = tui.resize({ width: 12, rows: 16 });
   assert.ok(narrowFrame.every((line) => displayCellWidth(line) <= 12));
-  frame = narrowFrame.join("\n");
+  frame = stripPiCursorMarkers(narrowFrame.join("\n"));
   assert.match(stripVTControlCharacters(frame), /工具|🙂/u);
   assert.equal(frame.includes("\u001b]0;owned"), false);
   assert.equal(frame.includes("\u001b[31m"), false);

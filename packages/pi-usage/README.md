@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/@diousk/pi-usage-fast)](https://www.npmjs.com/package/@diousk/pi-usage-fast) [![Pi extension](https://img.shields.io/badge/Pi-extension-blue)](https://pi.dev) [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
-Inspect usage and DeepSeek API balance for Pi's active provider account, query other configured providers, and toggle Fast mode for supported OpenAI Codex models.
+Inspect usage and DeepSeek API balance for Pi's active provider account, query other configured providers, and toggle Fast mode for supported OpenAI and Codex models.
 The extension keeps each provider's native quota, allowance, and spending semantics instead of treating unlike values as equivalent.
 xAI OAuth subscription reporting follows the reviewed Grok Build contract and runs only after an explicit `/usage` action.
 
@@ -51,19 +51,19 @@ The package declares `dist/index.ts`, so an unbuilt local checkout must run the 
 
 Run `/usage` in TUI or RPC mode to inspect the active provider, refresh its usage, or choose another configured provider.
 When a provider exposes several billing targets, `/usage` asks for one target before querying usage.
-Run `/fast` to toggle Fast mode for a supported active Codex model.
+Run `/fast` to toggle Fast mode for a supported active OpenAI or Codex model.
 
 ## 💬 Commands
 
 | Command | Purpose |
 | --- | --- |
 | `/usage` | Query the active provider's usage, then manage provider queries, preferences, or eligible Codex resets. |
-| `/fast` | Toggle Fast mode for the active supported Codex model. |
+| `/fast` | Toggle Fast mode for the active supported OpenAI or Codex model. |
 
 Both commands support TUI and RPC, accept no arguments, and reject print and JSON modes.
 Cross-provider queries require an explicit interactive choice; there are no provider-ID, `--refresh`, or `--all` arguments.
 Requests use the matched provider credentials; see [Security and privacy](#-security-and-privacy).
-Fast mode uses more plan allowance; see [Codex Fast mode](#codex-fast-mode) for eligibility and when changes apply.
+Fast mode uses more plan allowance or API credits; see [Codex Fast mode](#codex-fast-mode) for eligibility and when changes apply.
 
 Codex reset redemption requires a freshly matched current OAuth account and explicit confirmation; **after confirmation, its progress view cannot cancel the reset**.
 Read the [query and reset guide](./docs/operations.md) for target selection, cancellation, and safe retry behavior.
@@ -87,11 +87,11 @@ A successful explicit Fireworks account selection writes the generic field and r
 
 ### Codex Fast mode
 
-Run `/fast` without arguments to toggle Fast for the active supported Codex model, or use **Turn Fast mode on/off** in `/usage`.
-Fast is about 1.5× faster and uses more of your plan allowance.
+Run `/fast` without arguments to toggle Fast for the active supported OpenAI or Codex model, or use **Turn Fast mode on/off** in `/usage`.
+Fast requests priority routing and consumes more plan allowance or API credits.
 The `codexFastMode` preference defaults to Off.
 
-Fast currently applies only to official `openai-codex-responses` requests for `gpt-5.5`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-6-*`, and `gpt-6.<minor>-*` models at `https://chatgpt.com`.
+Fast applies to official OpenAI Codex requests at `https://chatgpt.com` and OpenAI Responses requests at `https://api.openai.com`, including the newer ChatGPT sign-in and API-key billing. Supported models are `gpt-5.5`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-6-*`, and `gpt-6.<minor>-*`.
 For example, `gpt-6.1-sol` supports the same toggle, routing, statusline, and priority cost correction as `gpt-6-sol`.
 It sends `service_tier: "priority"` while enabled and explicit `service_tier: "default"` otherwise.
 The statusline adds `fast` only while the preference is effective, for example `codex fast 59% ↻ 2h30m` with the default reset countdown.
@@ -133,6 +133,7 @@ Currencies and billing targets remain separate.
 | Provider | Reported data |
 | --- | --- |
 | OpenAI Codex | Subscription windows, credits, resets, and model buckets |
+| OpenAI | Links to ChatGPT plan usage or API billing; numeric quotas are unavailable through this authentication flow |
 | Kimi For Coding | Plan request windows and a separate booster wallet |
 | Moonshot AI Global/China | Current API balance in USD/CNY |
 | MiniMax Global/China | Token Plan windows or pay-as-you-go API balance |
@@ -147,6 +148,7 @@ Currencies and billing targets remain separate.
 | Z.AI | Coding Plan quota windows, MCP allowance, plan name, and renewal date |
 
 Read the [provider reference](./docs/providers.md) for provider IDs, exact endpoints, authentication requirements, normalization rules, statusline examples, limitations, and pinned contract evidence.
+For Pi's newer OpenAI ChatGPT sign-in, `/usage` links to [ChatGPT usage settings](https://chatgpt.com/settings/usage); API-key accounts link to API billing. Numeric quotas are not exposed through this flow, and its token is never sent to legacy Codex endpoints.
 Codex reset redemption requires a freshly matched current OAuth account and explicit confirmation; custom or proxy origins fail before mutation.
 
 ## 🧭 Current and configured accounts

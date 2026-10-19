@@ -48,6 +48,7 @@ export interface UsageReport {
 }
 
 export interface ResolvedUsageAuth {
+  chatgptPlan?: boolean;
   apiKey?: string;
   headers: Record<string, string>;
   fingerprint: string;

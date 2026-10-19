@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import type { ChildProcess } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { Socket } from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, test, vi } from "vitest";
@@ -212,8 +213,6 @@ test("runChild rejects asynchronous RPC stdin write errors without an unhandled 
   installFakePi(`
 async function handle(command) {
   if (command.type !== "prompt") return;
-  process.stdin.on("error", () => undefined);
-  fs.closeSync(0);
   respond(command);
 }
 setInterval(() => {}, 1000);
@@ -224,10 +223,22 @@ setInterval(() => {}, 1000);
     resolveControl = resolve;
   });
   const work = runChild(childRequest({ signal: controller.signal, onControl: resolveControl }));
-  const control = await controlReady;
-  await assert.rejects(() => control.send("question after stdin closed"), /EPIPE|stdin|write/iu);
-  controller.abort();
-  assert.equal((await work).state, "cancelled");
+  try {
+    const control = await controlReady;
+    vi.spyOn(Socket.prototype, "write").mockImplementationOnce(function (this: Socket, _chunk, encoding, callback) {
+      const done = typeof encoding === "function" ? encoding : callback;
+      queueMicrotask(() => {
+        const error = new Error("EPIPE: asynchronous stdin write failure");
+        done?.(error);
+        this.emit("error", error);
+      });
+      return false;
+    });
+    await assert.rejects(() => control.send("question after stdin closed"), /EPIPE|stdin|write/iu);
+  } finally {
+    controller.abort();
+    assert.equal((await work).state, "cancelled");
+  }
 });
 
 test("runChild aborts an in-flight RPC steering command", async () => {

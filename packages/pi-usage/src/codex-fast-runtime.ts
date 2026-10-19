@@ -14,7 +14,7 @@ import type { PiModel } from "./types.js";
 const NO_FAST_REQUEST = Symbol("no-fast-request");
 type PendingFastRequest = { fastRequested: boolean; model: PiModel };
 
-export const FAST_USAGE_WARNING = "Fast is about 1.5× faster and uses more of your plan allowance.";
+export const FAST_USAGE_WARNING = "Fast uses priority routing and consumes more plan allowance or API credits.";
 
 export function registerCodexFastMode(
   pi: ExtensionAPI,
@@ -65,7 +65,7 @@ export function registerCodexFastMode(
       if (!ctx.hasUI) throw new Error("/fast requires TUI or RPC mode.");
       const availability = codexFastAvailability(ctx.model, settingsRuntime.get().settings.codexFastMode);
       if (availability.kind === "not-codex") {
-        ctx.ui.notify("/fast is available only for the active OpenAI Codex model.", "warning");
+        ctx.ui.notify("/fast requires a supported OpenAI or OpenAI Codex model.", "warning");
         return;
       }
       if (availability.kind === "unavailable") {

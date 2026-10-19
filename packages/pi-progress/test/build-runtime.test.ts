@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
-import { DefaultResourceLoader, type ExtensionContext, SettingsManager } from "@earendil-works/pi-coding-agent";
+import {
+  DefaultResourceLoader,
+  type ExtensionContext,
+  type ExtensionToolContext,
+  SettingsManager,
+} from "@earendil-works/pi-coding-agent";
 import { test } from "vitest";
 import { registerRuntimeBuilderContract } from "../../../test/runtime-builder-contract.js";
 
@@ -54,7 +59,7 @@ test("generated runtime is loadable by Pi's Jiti resource loader", async () => {
           notifications.push({ message, type });
         },
       },
-    } as unknown as ExtensionContext;
+    } as unknown as ExtensionToolContext;
     await emit(extension.handlers, "session_start", ctx);
     assert.deepEqual(widgets.at(-1), { key: "progress", content: undefined });
     assert.deepEqual(notifications, []);

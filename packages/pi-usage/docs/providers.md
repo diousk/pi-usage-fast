@@ -5,6 +5,7 @@
 This reference preserves each provider's endpoint, authentication boundary, billing semantics, and contract evidence.
 The README contains the capability overview and shared security requirements.
 
+- [OpenAI](#openai)
 - [OpenAI Codex](#openai-codex)
 - [Kimi For Coding](#kimi-for-coding)
 - [Moonshot AI](#moonshot-ai-api-balance)
@@ -20,6 +21,21 @@ The README contains the capability overview and shared security requirements.
 - [Z.AI](#zai-glm-coding-plan)
 
 ## 📋 Provider semantics
+
+### OpenAI
+
+- Provider ID: `openai`
+- Semantics: ChatGPT subscription management or API billing, selected from the active runtime credential
+- Source: no quota request; links to [ChatGPT usage settings](https://chatgpt.com/settings/usage) or [API usage](https://platform.openai.com/usage)
+- Displayed data: a management link without numeric quotas, reset estimates, or statusline percentages
+
+The newer ChatGPT sign-in uses OpenAI's public Responses API at `https://api.openai.com`.
+An exactly matching OAuth credential with the `chatgpt.tokens.use.direct` scope identifies plan usage; API-key credentials select API billing.
+Compatible pending account activation finishes before credentials are resolved, and an unmatched OAuth account fails closed.
+Custom or proxy origins are rejected before credential resolution.
+
+OpenAI's [token-sharing inference contract](https://developers.openai.com/siwc/token-sharing-open-source/models-and-inference) requires the public API rather than ChatGPT backend endpoints.
+Its [usage-management guidance](https://developers.openai.com/siwc/ui-ux-guidelines) provides the settings destination, so this adapter never sends the new token to legacy Codex quota or reset endpoints.
 
 ### OpenAI Codex
 

@@ -1034,12 +1034,13 @@ test("branch changes abort an in-flight periodic refresh", async () => {
   const periodicPrView = deferred<ExecResult>();
   const sessionSignal = new AbortController().signal;
   let periodicSignal: AbortSignal | undefined;
+  let prViews = 0;
   const mock = createMockPi();
   installExec(mock, async (command, args, options) => {
     if (command === "git") return textResult(".git/HEAD\n");
     if (args[0] === "pr") {
-      if (options?.signal && options.signal !== sessionSignal) {
-        periodicSignal = options.signal;
+      if (++prViews > 1) {
+        periodicSignal = options?.signal;
         return periodicPrView.promise;
       }
       return okResult(samplePr);

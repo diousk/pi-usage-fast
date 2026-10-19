@@ -395,6 +395,7 @@ export function registerGoalLifecycle(
 
   pi.on("before_agent_start", (event, ctx) => {
     if (!sessionActive) return;
+    if (event.messageType === "custom") return goalContractBoundaryResult(ctx);
     runtime.clearAgentRun();
     // Pi-owned retries emit agent_start directly. Reaching a normal prompt
     // boundary means cleanup no longer owns the next run, so the hard-cap guard

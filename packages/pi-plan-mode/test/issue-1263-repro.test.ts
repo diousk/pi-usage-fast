@@ -174,9 +174,9 @@ export default function laterExtension(pi) {
       { plan: "# Plan\n\nImplement it." },
       new AbortController().signal,
       undefined,
-      runner.createContext(),
+      runner.createToolContext("test", undefined),
     );
-    await runner.emit({ type: "agent_settled" });
+    await runner.emit({ type: "agent_settled", aborted: false });
     await handoffFinished.promise;
     await Promise.resolve();
 

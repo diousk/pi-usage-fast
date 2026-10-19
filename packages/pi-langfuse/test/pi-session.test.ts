@@ -13,6 +13,27 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
+test("custom-message runs create a trace with their actual content", async () => {
+  const backend = new FakeBackend();
+  const runtime = createLangfuseRuntimeFromBackend(backend);
+  const session = createPiLangfuseSession(runtime);
+  const mock = createMockPi();
+  session.extension(mock.pi);
+  const { ctx } = createMockContext();
+  try {
+    await mock.events.get("session_start")?.[0]?.({}, ctx);
+    await mock.events.get("before_agent_start")?.[0]?.(
+      { messageType: "custom", message: { content: "extension follow-up" } },
+      ctx,
+    );
+    const agent = backend.observations.find(({ name }) => name === "pi.agent");
+    assert.deepEqual(agent?.attributes.input, { prompt: "extension follow-up" });
+  } finally {
+    await session.dispose();
+    await runtime.shutdown();
+  }
+});
+
 test("two Pi sessions share one runtime without sharing lifecycle state", async () => {
   const backend = new FakeBackend();
   const runtime = createLangfuseRuntimeFromBackend(backend);
